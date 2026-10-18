@@ -26,16 +26,16 @@ public class AdminService {
 
     private final PedidoRepository pedidoRepository;
     private final EntregadorRepository entregadorRepository;
-    private final EvolutionApiClientService evolutionApiClientService;
+    private final WhatsappNotificationService whatsappNotificationService;
 
     public AdminService(
             PedidoRepository pedidoRepository,
             EntregadorRepository entregadorRepository,
-            EvolutionApiClientService evolutionApiClientService
+            WhatsappNotificationService whatsappNotificationService
     ) {
         this.pedidoRepository = pedidoRepository;
         this.entregadorRepository = entregadorRepository;
-        this.evolutionApiClientService = evolutionApiClientService;
+        this.whatsappNotificationService = whatsappNotificationService;
     }
 
     @Transactional
@@ -46,11 +46,13 @@ public class AdminService {
         if (pedido.getEnderecoEntrega() == null
                 || pedido.getEnderecoEntrega().isBlank()
                 || pedido.getFormaPagamento() == null) {
-            throw new IllegalStateException("Não é possível despachar um pedido com endereço ou forma de pagamento em branco. O cliente ainda não finalizou o pedido no WhatsApp.");
+            throw new IllegalStateException("Não é possível despachar um pedido com endereço ou forma de pagamento em branco. O cliente ainda não finalizou o pedido.");
         }
 
-        if (pedido.getStatus() != Status.PENDENTE && pedido.getStatus() != Status.AGUARDANDO_VALIDACAO_CPF) {
-            throw new IllegalStateException("Apenas pedidos pendentes podem ser despachados.");
+        if (pedido.getStatus() != Status.PENDENTE) {
+            throw new IllegalStateException(
+                    "Apenas pedidos com status PENDENTE podem ser despachados. "
+                            + "Pedidos do Gás do Povo precisam do CPF aprovado antes.");
         }
 
         Entregador entregador = entregadorRepository.findById(entregadorId)
@@ -65,7 +67,28 @@ public class AdminService {
         pedido.setDataAtualizacao(LocalDateTime.now());
 
         Pedido pedidoSalvo = pedidoRepository.save(pedido);
-        evolutionApiClientService.enviarFichaEntregador(pedidoSalvo);
+        whatsappNotificationService.notificarMudancaDeStatus(
+                pedidoSalvo.getCliente().getTelefone(), pedidoSalvo.getStatus());
+        return pedidoSalvo;
+    }
+
+    @Transactional
+    public Pedido cancelarPedido(Long pedidoId) {
+        Pedido pedido = pedidoRepository.findById(pedidoId)
+                .orElseThrow(() -> new IllegalArgumentException("Pedido não encontrado: " + pedidoId));
+
+        if (pedido.getStatus() == Status.ENTREGUE) {
+            throw new IllegalStateException("Pedido já entregue não pode ser cancelado.");
+        }
+        if (pedido.getStatus() == Status.CANCELADO) {
+            throw new IllegalStateException("Pedido já está cancelado.");
+        }
+
+        pedido.setStatus(Status.CANCELADO);
+        pedido.setDataAtualizacao(LocalDateTime.now());
+        Pedido pedidoSalvo = pedidoRepository.save(pedido);
+        whatsappNotificationService.notificarMudancaDeStatus(
+                pedidoSalvo.getCliente().getTelefone(), pedidoSalvo.getStatus());
         return pedidoSalvo;
     }
 
@@ -80,7 +103,10 @@ public class AdminService {
 
         pedido.setStatus(Status.PENDENTE);
         pedido.setDataAtualizacao(LocalDateTime.now());
-        return pedidoRepository.save(pedido);
+        Pedido pedidoSalvo = pedidoRepository.save(pedido);
+        whatsappNotificationService.notificarMudancaDeStatus(
+                pedidoSalvo.getCliente().getTelefone(), pedidoSalvo.getStatus());
+        return pedidoSalvo;
     }
 
     @Transactional
@@ -94,7 +120,10 @@ public class AdminService {
 
         pedido.setStatus(Status.CPF_REPROVADO);
         pedido.setDataAtualizacao(LocalDateTime.now());
-        return pedidoRepository.save(pedido);
+        Pedido pedidoSalvo = pedidoRepository.save(pedido);
+        whatsappNotificationService.notificarMudancaDeStatus(
+                pedidoSalvo.getCliente().getTelefone(), pedidoSalvo.getStatus());
+        return pedidoSalvo;
     }
 
     @Transactional
@@ -109,6 +138,8 @@ public class AdminService {
         pedido.setStatus(Status.ENTREGUE);
         pedido.setDataAtualizacao(LocalDateTime.now());
         Pedido pedidoSalvo = pedidoRepository.save(pedido);
+        whatsappNotificationService.notificarMudancaDeStatus(
+                pedidoSalvo.getCliente().getTelefone(), pedidoSalvo.getStatus());
 
         Entregador entregador = pedidoSalvo.getEntregador();
         if (entregador != null && FORMAS_QUE_ENTRAM_NO_CAIXA.contains(pedidoSalvo.getFormaPagamento())) {

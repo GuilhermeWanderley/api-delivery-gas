@@ -1,0 +1,64 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-gasdelivery}
+      POSTGRES_USER: ${DB_USER:-gas}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-gas}
+    ports:
+      # Só o próprio host acessa: o painel (dev), o ngrok e o nginx.
+      # Nunca exponha o Postgres para a internet.
+      - "127.0.0.1:5433:5432"   # 5432 do host já é usado pelo Postgres da Evolution API
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-gas} -d ${DB_NAME:-gasdelivery}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    # Fala com a Evolution API pela REDE INTERNA do docker (não passa pelo host,
+    # então a porta 8090 pode ficar fechada para o mundo).
+    networks:
+      - default
+      - evolution
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DB_HOST: db
+      DB_NAME: ${DB_NAME:-gasdelivery}
+      DB_USER: ${DB_USER:-gas}
+      DB_PASSWORD: ${DB_PASSWORD:-gas}
+      EVOLUTION_API_URL: http://evolution-api:8080/message/sendText/botgas
+      EVOLUTION_API_KEY: ${EVOLUTION_API_KEY:-}
+      # ---- Segurança: defina estes valores no .env antes de publicar ----
+      APP_ADMIN_USUARIO: ${APP_ADMIN_USUARIO:-admin}
+      APP_ADMIN_SENHA: ${APP_ADMIN_SENHA:-binho-admin}
+      BOT_API_KEY: ${BOT_API_KEY:-}
+      APP_CORS_ORIGINS: ${APP_CORS_ORIGINS:-http://localhost:5173}
+    ports:
+      # Apenas localhost: quem fala com a API é o painel, o ngrok ou o nginx
+      # (todos rodando no próprio host). Nada de expor a 8080 direto.
+      - "127.0.0.1:8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:8080/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+
+networks:
+  # Rede criada pela stack da Evolution API (compose em ~/evolution-api).
+  # Permite o backend chamar http://evolution-api:8080 sem expor portas.
+  evolution:
+    external: true
+    name: evolution-api_default
+
+volumes:
+  pgdata:

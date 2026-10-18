@@ -15,6 +15,18 @@ import java.util.Optional;
 public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     List<Pedido> findByStatus(Status status);
 
+    /** Pedidos de um status na ordem de chegada (mais antigo primeiro). */
+    List<Pedido> findByStatusOrderByDataCriacaoAsc(Status status);
+
+    boolean existsByEntregadorId(Long entregadorId);
+
+    /** Pedidos entregues dentro de um turno (para o fechamento de caixa). */
+    List<Pedido> findByStatusAndDataAtualizacaoBetweenOrderByDataAtualizacaoAsc(
+            Status status,
+            LocalDateTime inicio,
+            LocalDateTime fim
+    );
+
     List<Pedido> findByEntregadorIdAndStatusAndDataAtualizacaoBetween(
             Long entregadorId,
             Status status,
@@ -54,4 +66,7 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
             String telefone,
             List<Status> status
     );
+
+    /** Usado para garantir idempotência das requisições vindas do robô. */
+    Optional<Pedido> findByChaveIdempotencia(String chaveIdempotencia);
 }
