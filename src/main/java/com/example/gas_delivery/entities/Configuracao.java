@@ -45,4 +45,8 @@ public class Configuracao {
     /** A promoção de quarta-feira está ativa? */
     @Column(nullable = false)
     private boolean promocaoQuartaAtiva = true;
+
+    /** Chave PIX que o robô/atendente repassa ao cliente. Editável no painel. */
+    @Column(length = 255)
+    private String chavePix;
 }

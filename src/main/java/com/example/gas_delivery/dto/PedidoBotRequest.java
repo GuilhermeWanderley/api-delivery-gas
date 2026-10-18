@@ -2,6 +2,7 @@ package com.example.gas_delivery.dto;
 
 import com.example.gas_delivery.entities.FormaPagamento;
 import com.example.gas_delivery.entities.TipoPedido;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -34,6 +35,11 @@ public class PedidoBotRequest {
     @NotNull(message = "Forma de pagamento é obrigatória.")
     private FormaPagamento formaPagamento;
 
+    /**
+     * Troco desejado. Aceita {@code ""}, {@code "0"}, {@code "50"}, {@code "R$ 50,00"}.
+     * Valores ilegíveis viram {@code null} — nunca estouram a requisição.
+     */
+    @JsonDeserialize(using = MoneyDeserializer.class)
     private BigDecimal precisaTrocoPara;
 
     /**

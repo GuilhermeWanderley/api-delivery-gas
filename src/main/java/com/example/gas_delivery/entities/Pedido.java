@@ -1,9 +1,11 @@
 package com.example.gas_delivery.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -76,4 +78,29 @@ public class Pedido {
      */
     @Column(name = "chave_idempotencia", length = 128)
     private String chaveIdempotencia;
+
+    /** Situação do PIX/dinheiro/cartão — permite rastrear estorno. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status_pagamento", length = 30)
+    private StatusPagamento statusPagamento = StatusPagamento.NAO_APLICAVEL;
+
+    /** Veio do robô ou foi lançado pelo atendente. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "origem", length = 10)
+    private OrigemPedido origem = OrigemPedido.BOT;
+
+    /**
+     * Turno de caixa em que o pedido foi criado. O vínculo é por chave
+     * estrangeira (e não por janela de data/hora): pedidos antigos ficam com
+     * {@code caixa_id} nulo de propósito e não aparecem no turno atual.
+     * <p>
+     * Não é serializado no JSON: o perfil docker roda com
+     * {@code spring.jpa.open-in-view=false}, então tocar em uma referência
+     * {@link FetchType#LAZY} durante a serialização estouraria
+     * {@code LazyInitializationException}.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "caixa_id")
+    @JsonIgnore
+    private Caixa caixa;
 }

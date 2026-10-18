@@ -113,6 +113,10 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                         // Chamado pelo Typebot — validado pelo BotApiKeyFilter (X-Api-Key)
                         .requestMatchers("/api/pedidos/via-bot").permitAll()
+                        // Transbordo (falar com atendente) — validado pelo BotApiKeyFilter
+                        .requestMatchers("/api/atendimento/solicitar").permitAll()
+                        // Webhook da Evolution API (áudio etc.) — validado pelo BotApiKeyFilter
+                        .requestMatchers("/api/webhook/evolution").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().permitAll())

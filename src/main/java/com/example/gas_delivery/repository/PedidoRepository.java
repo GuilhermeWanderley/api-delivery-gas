@@ -13,10 +13,13 @@ import java.util.List;
 import java.util.Optional;
 
 public interface PedidoRepository extends JpaRepository<Pedido, Long> {
+
+    /** Pedidos criados com o caixa fechado (órfãos) — adotados quando um novo caixa abre. */
+    java.util.List<Pedido> findByCaixaIsNullAndStatusIn(java.util.Collection<Status> statuses);
     List<Pedido> findByStatus(Status status);
 
-    /** Pedidos de um status na ordem de chegada (mais antigo primeiro). */
-    List<Pedido> findByStatusOrderByDataCriacaoAsc(Status status);
+    /** Pedidos de um status, do mais novo para o mais antigo. */
+    List<Pedido> findByStatusOrderByIdDesc(Status status);
 
     boolean existsByEntregadorId(Long entregadorId);
 
@@ -69,4 +72,10 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
 
     /** Usado para garantir idempotência das requisições vindas do robô. */
     Optional<Pedido> findByChaveIdempotencia(String chaveIdempotencia);
+
+    /** Pedidos de um turno de caixa (kanban do turno atual), do mais novo para o mais antigo. */
+    List<Pedido> findByCaixaIdOrderByIdDesc(Long caixaId);
+
+    /** Pedidos de um turno de caixa filtrados por status, do mais novo para o mais antigo. */
+    List<Pedido> findByCaixaIdAndStatusOrderByIdDesc(Long caixaId, Status status);
 }

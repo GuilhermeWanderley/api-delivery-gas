@@ -38,6 +38,7 @@ services:
       EVOLUTION_API_URL: http://evolution-api:8080/message/sendText/botgas
       EVOLUTION_API_KEY: ${EVOLUTION_API_KEY:-}
       # ---- Segurança: defina estes valores no .env antes de publicar ----
+      APP_AMBIENTE: ${APP_AMBIENTE:-desenvolvimento}
       APP_ADMIN_USUARIO: ${APP_ADMIN_USUARIO:-admin}
       APP_ADMIN_SENHA: ${APP_ADMIN_SENHA:-}
       BOT_API_KEY: ${BOT_API_KEY:-}

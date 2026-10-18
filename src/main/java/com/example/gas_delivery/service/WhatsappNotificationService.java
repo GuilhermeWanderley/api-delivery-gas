@@ -1,5 +1,6 @@
 package com.example.gas_delivery.service;
 
+import com.example.gas_delivery.entities.Pedido;
 import com.example.gas_delivery.entities.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +31,7 @@ public class WhatsappNotificationService {
             "🏍️ O entregador acabou de sair com o seu gás! Fique atento ao portão.",
 
             Status.ENTREGUE,
-            "🏠 Pedido entregue! O Gás do Povo agradece a preferência.",
+            "🏠 Pedido entregue! O *Binho do Gás* agradece a preferência.",
 
             Status.CANCELADO,
             "❌ Infelizmente seu pedido não pôde ser aprovado para a promoção. Deseja pedir com o valor normal?",
@@ -78,6 +79,21 @@ public class WhatsappNotificationService {
         }
 
         String numero = formatarTelefone(telefoneCliente);
+        enviarMensagem(numero, mensagem);
+    }
+
+    /**
+     * Envia ao cliente a chave PIX do pedido e pede o comprovante,
+     * reutilizando o mesmo mecanismo de envio das notificações de status.
+     *
+     * @param pedido   pedido que está sendo pago
+     * @param chavePix chave PIX cadastrada na configuração
+     */
+    public void enviarChavePix(Pedido pedido, String chavePix) {
+        String mensagem = "💳 *Pagamento do pedido #" + pedido.getId() + "*\n\n"
+                + "Chave PIX: *" + chavePix + "*\n\n"
+                + "Depois de pagar, envie o comprovante por aqui. 🧾";
+        String numero = formatarTelefone(pedido.getCliente().getTelefone());
         enviarMensagem(numero, mensagem);
     }
 

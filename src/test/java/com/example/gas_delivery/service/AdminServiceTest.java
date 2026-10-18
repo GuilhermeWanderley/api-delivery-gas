@@ -5,6 +5,7 @@ import com.example.gas_delivery.entities.Entregador;
 import com.example.gas_delivery.entities.FormaPagamento;
 import com.example.gas_delivery.entities.Pedido;
 import com.example.gas_delivery.entities.Status;
+import com.example.gas_delivery.entities.StatusPagamento;
 import com.example.gas_delivery.entities.TipoPedido;
 import com.example.gas_delivery.repository.EntregadorRepository;
 import com.example.gas_delivery.repository.PedidoRepository;
@@ -39,6 +40,9 @@ class AdminServiceTest {
 
     @Mock
     private WhatsappNotificationService whatsappNotificationService;
+
+    @Mock
+    private ConfiguracaoService configuracaoService;
 
     @InjectMocks
     private AdminService adminService;
@@ -336,6 +340,175 @@ class AdminServiceTest {
             var resultado = adminService.calcularCaixaDoDiaPorEntregador();
 
             assertEquals(BigDecimal.ZERO, resultado.get(1L));
+        }
+    }
+
+    // ==================== Pagamento (PIX) ====================
+
+    @Nested
+    @DisplayName("atualizarStatusPagamento - transições do PIX")
+    class PagamentoTests {
+
+        private Pedido pedidoComStatus(StatusPagamento statusPagamento) {
+            pedidoPendente.setStatusPagamento(statusPagamento);
+            when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedidoPendente));
+            return pedidoPendente;
+        }
+
+        @Test
+        @DisplayName("AGUARDANDO -> COMPROVANTE_ENVIADO é permitido")
+        void aguardandoParaComprovanteEnviado() {
+            Pedido pedido = pedidoComStatus(StatusPagamento.AGUARDANDO);
+            when(pedidoRepository.save(any(Pedido.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            Pedido resultado = adminService.atualizarStatusPagamento(
+                    1L, StatusPagamento.COMPROVANTE_ENVIADO);
+
+            assertEquals(StatusPagamento.COMPROVANTE_ENVIADO, resultado.getStatusPagamento());
+            verify(pedidoRepository).save(pedido);
+        }
+
+        @Test
+        @DisplayName("AGUARDANDO -> CONFIRMADO é permitido")
+        void aguardandoParaConfirmado() {
+            Pedido pedido = pedidoComStatus(StatusPagamento.AGUARDANDO);
+            when(pedidoRepository.save(any(Pedido.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            Pedido resultado = adminService.atualizarStatusPagamento(1L, StatusPagamento.CONFIRMADO);
+
+            assertEquals(StatusPagamento.CONFIRMADO, resultado.getStatusPagamento());
+            verify(pedidoRepository).save(pedido);
+        }
+
+        @Test
+        @DisplayName("COMPROVANTE_ENVIADO -> CONFIRMADO é permitido")
+        void comprovanteEnviadoParaConfirmado() {
+            pedidoComStatus(StatusPagamento.COMPROVANTE_ENVIADO);
+            when(pedidoRepository.save(any(Pedido.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            Pedido resultado = adminService.atualizarStatusPagamento(1L, StatusPagamento.CONFIRMADO);
+
+            assertEquals(StatusPagamento.CONFIRMADO, resultado.getStatusPagamento());
+        }
+
+        @Test
+        @DisplayName("A_ESTORNAR -> ESTORNADO é permitido")
+        void aEstornarParaEstornado() {
+            pedidoComStatus(StatusPagamento.A_ESTORNAR);
+            when(pedidoRepository.save(any(Pedido.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            Pedido resultado = adminService.atualizarStatusPagamento(1L, StatusPagamento.ESTORNADO);
+
+            assertEquals(StatusPagamento.ESTORNADO, resultado.getStatusPagamento());
+        }
+
+        @Test
+        @DisplayName("Pedido NAO_APLICAVEL responde que não é PIX")
+        void naoAplicavelNaoEhPix() {
+            pedidoComStatus(StatusPagamento.NAO_APLICAVEL);
+
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                    () -> adminService.atualizarStatusPagamento(1L, StatusPagamento.CONFIRMADO));
+
+            assertEquals("Este pedido não é PIX.", ex.getMessage());
+            verify(pedidoRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("Transição fora do fluxo é rejeitada")
+        void transicaoInvalidaEhRejeitada() {
+            pedidoComStatus(StatusPagamento.COMPROVANTE_ENVIADO);
+
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                    () -> adminService.atualizarStatusPagamento(1L, StatusPagamento.AGUARDANDO));
+
+            assertEquals("Transição de pagamento inválida.", ex.getMessage());
+            verify(pedidoRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("Pedido já CONFIRMADO não pode ser estornado diretamente")
+        void confirmadoNaoPodeSerEstornadoDiretamente() {
+            pedidoComStatus(StatusPagamento.CONFIRMADO);
+
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                    () -> adminService.atualizarStatusPagamento(1L, StatusPagamento.ESTORNADO));
+
+            assertEquals("Transição de pagamento inválida.", ex.getMessage());
+        }
+
+        @Test
+        @DisplayName("Status de destino nulo é rejeitado")
+        void statusNuloEhRejeitado() {
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                    () -> adminService.atualizarStatusPagamento(1L, null));
+
+            assertEquals("Status de pagamento é obrigatório.", ex.getMessage());
+        }
+
+        @Test
+        @DisplayName("Pedido inexistente é rejeitado")
+        void pedidoInexistenteEhRejeitado() {
+            when(pedidoRepository.findById(99L)).thenReturn(Optional.empty());
+
+            assertThrows(IllegalArgumentException.class,
+                    () -> adminService.atualizarStatusPagamento(99L, StatusPagamento.CONFIRMADO));
+        }
+    }
+
+    // ==================== Estorno automático no cancelamento ====================
+
+    @Nested
+    @DisplayName("cancelarPedido - estorno automático")
+    class CancelamentoEstornoTests {
+
+        @Test
+        @DisplayName("Pedido CONFIRMADO vira A_ESTORNAR ao cancelar")
+        void confirmadoViraAEstornar() {
+            pedidoPendente.setStatusPagamento(StatusPagamento.CONFIRMADO);
+            when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedidoPendente));
+            when(pedidoRepository.save(any(Pedido.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            Pedido resultado = adminService.cancelarPedido(1L);
+
+            assertEquals(Status.CANCELADO, resultado.getStatus());
+            assertEquals(StatusPagamento.A_ESTORNAR, resultado.getStatusPagamento());
+        }
+
+        @Test
+        @DisplayName("Pedido COMPROVANTE_ENVIADO vira A_ESTORNAR ao cancelar")
+        void comprovanteEnviadoViraAEstornar() {
+            pedidoPendente.setStatusPagamento(StatusPagamento.COMPROVANTE_ENVIADO);
+            when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedidoPendente));
+            when(pedidoRepository.save(any(Pedido.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            Pedido resultado = adminService.cancelarPedido(1L);
+
+            assertEquals(StatusPagamento.A_ESTORNAR, resultado.getStatusPagamento());
+        }
+
+        @Test
+        @DisplayName("Pedido AGUARDANDO não é marcado para estorno")
+        void aguardandoNaoViraAEstornar() {
+            pedidoPendente.setStatusPagamento(StatusPagamento.AGUARDANDO);
+            when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedidoPendente));
+            when(pedidoRepository.save(any(Pedido.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            Pedido resultado = adminService.cancelarPedido(1L);
+
+            assertEquals(StatusPagamento.AGUARDANDO, resultado.getStatusPagamento());
+        }
+
+        @Test
+        @DisplayName("Pedido em dinheiro permanece NAO_APLICAVEL")
+        void naoAplicavelPermanece() {
+            pedidoPendente.setStatusPagamento(StatusPagamento.NAO_APLICAVEL);
+            when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedidoPendente));
+            when(pedidoRepository.save(any(Pedido.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            Pedido resultado = adminService.cancelarPedido(1L);
+
+            assertEquals(StatusPagamento.NAO_APLICAVEL, resultado.getStatusPagamento());
         }
     }
 }

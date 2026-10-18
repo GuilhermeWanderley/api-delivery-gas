@@ -80,7 +80,19 @@ public class CaixaService {
         caixa.setDataAbertura(LocalDateTime.now());
         caixa.setStatus(StatusCaixa.ABERTO);
         caixa.setAbertoPor(abertoPor);
-        return caixaRepository.save(caixa);
+        Caixa salvo = caixaRepository.save(caixa);
+
+        // Pedidos que chegaram enquanto o caixa estava fechado não podem ficar órfãos:
+        // o turno novo os adota para que o atendente os veja no painel.
+        java.util.List<Pedido> orfaos = pedidoRepository.findByCaixaIsNullAndStatusIn(
+                java.util.List.of(Status.PENDENTE, Status.DESPACHADO, Status.AGUARDANDO_VALIDACAO_CPF));
+        if (!orfaos.isEmpty()) {
+            for (Pedido pedido : orfaos) {
+                pedido.setCaixa(salvo);
+            }
+            pedidoRepository.saveAll(orfaos);
+        }
+        return salvo;
     }
 
     @Transactional
