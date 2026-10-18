@@ -32,6 +32,7 @@ public class ConfiguracaoService {
         atual.setPrecoGasPovo(dados.getPrecoGasPovo());
         atual.setDescontoQuarta(dados.getDescontoQuarta());
         atual.setPromocaoQuartaAtiva(dados.isPromocaoQuartaAtiva());
+        atual.setChavePix(dados.getChavePix());
         return repository.save(atual);
     }
 }

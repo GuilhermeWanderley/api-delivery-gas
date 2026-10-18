@@ -26,7 +26,11 @@ public class BotApiKeyFilter extends OncePerRequestFilter {
 
     private static final Logger log = LoggerFactory.getLogger(BotApiKeyFilter.class);
 
-    private static final String CAMINHO_BOT = "/api/pedidos/via-bot";
+    private static final java.util.Set<String> CAMINHOS_PROTEGIDOS = java.util.Set.of(
+            "/api/pedidos/via-bot",
+            "/api/atendimento/solicitar",
+            "/api/webhook/evolution"
+    );
     private static final String HEADER = "X-Api-Key";
 
     private final String chaveEsperada;
@@ -45,7 +49,7 @@ public class BotApiKeyFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return !CAMINHO_BOT.equals(request.getRequestURI());
+        return !CAMINHOS_PROTEGIDOS.contains(request.getRequestURI());
     }
 
     @Override
