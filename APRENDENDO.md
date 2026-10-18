@@ -31,7 +31,7 @@ Sem isso, nada mais faz sentido. São conceitos, não tecnologias.
 | **JSON** | estrutura chave-valor, array, aninhamento | [MDN — JSON](https://developer.mozilla.org/pt-BR/docs/Learn/JavaScript/Objects/JSON) |
 | **Git** | `add`, `commit`, `push`, `pull`, branch, merge | [Pro Git (PT)](https://git-scm.com/book/pt-br/v2) |
 
-**Teste prático:** rode `curl -u admin:binho-admin http://localhost:8080/api/admin/pedidos`
+**Teste prático:** rode `curl -u SEU_USUARIO:SUA_SENHA http://localhost:8080/api/admin/pedidos`
 e entenda o que voltou. Se não entendeu, volte ao HTTP.
 
 ⏱️ ~1 semana em paralelo com o resto.
@@ -286,7 +286,7 @@ Depois, no painel: `types/index.ts` → `services/api.ts` → `App.tsx` → `com
 2. **Entender teste:** rode `./mvnw test -Dtest=CaixaServiceTest` e leia o teste
    que verifica se o saldo do entregador é zerado.
 3. **Banco:** entre no psql e rode `SELECT status, count(*) FROM pedidos GROUP BY status;`
-4. **API:** com o sistema no ar, faça `curl -u admin:binho-admin http://localhost:8080/api/admin/configuracao`
+4. **API:** com o sistema no ar, faça `curl -u SEU_USUARIO:SUA_SENHA http://localhost:8080/api/admin/configuracao`
 5. **Frontend:** no painel, troque a cor de um botão em `index.css` e veja ao vivo.
 6. **Integração:** siga um pedido do início ao fim — Typebot → `via-bot` →
    `PedidoBotService` → banco → painel → `AdminService` → notificação.

@@ -39,7 +39,7 @@ services:
       EVOLUTION_API_KEY: ${EVOLUTION_API_KEY:-}
       # ---- Segurança: defina estes valores no .env antes de publicar ----
       APP_ADMIN_USUARIO: ${APP_ADMIN_USUARIO:-admin}
-      APP_ADMIN_SENHA: ${APP_ADMIN_SENHA:-binho-admin}
+      APP_ADMIN_SENHA: ${APP_ADMIN_SENHA:-}
       BOT_API_KEY: ${BOT_API_KEY:-}
       APP_CORS_ORIGINS: ${APP_CORS_ORIGINS:-http://localhost:5173}
     ports:

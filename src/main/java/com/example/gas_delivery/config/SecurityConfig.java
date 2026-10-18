@@ -51,13 +51,10 @@ public class SecurityConfig {
 
     private static final Logger log = LoggerFactory.getLogger(SecurityConfig.class);
 
-    /** Senha padrão de desenvolvimento — nunca deve ir para produção. */
-    static final String SENHA_PADRAO_DEV = "binho-admin";
-
     @Value("${app.seguranca.admin-usuario:admin}")
     private String adminUsuario;
 
-    @Value("${app.seguranca.admin-senha:" + SENHA_PADRAO_DEV + "}")
+    @Value("${app.seguranca.admin-senha:}")
     private String adminSenha;
 
     @Value("${app.seguranca.origens-permitidas:http://localhost:5173,http://localhost:8080}")
@@ -85,9 +82,6 @@ public class SecurityConfig {
                       para ter uma senha fixa.
                     ================================================================""",
                     adminUsuario, senhaEfetiva);
-        } else if (SENHA_PADRAO_DEV.equals(senhaEfetiva)) {
-            log.warn("[SEGURANÇA] usando a SENHA PADRÃO de desenvolvimento. "
-                    + "Defina APP_ADMIN_SENHA antes de publicar em produção.");
         }
 
         UserDetails admin = User.withUsername(adminUsuario)

@@ -24,9 +24,6 @@ public class ValidadorSegurancaProducao {
 
     private static final Logger log = LoggerFactory.getLogger(ValidadorSegurancaProducao.class);
 
-    /** Senha conhecida publicada no repositório — nunca aceita em produção. */
-    static final String SENHA_PADRAO_DEV = "binho-admin";
-
     private static final int TAMANHO_MINIMO_SENHA = 12;
     private static final int TAMANHO_MINIMO_CHAVE_ROBO = 24;
 
@@ -61,10 +58,6 @@ public class ValidadorSegurancaProducao {
         if (adminSenha.isEmpty()) {
             problemas.add("- APP_ADMIN_SENHA não definida.");
         } else {
-            if (SENHA_PADRAO_DEV.equals(adminSenha)) {
-                problemas.add("- APP_ADMIN_SENHA ainda é a SENHA PADRÃO do repositório ('"
-                        + SENHA_PADRAO_DEV + "').");
-            }
             if (adminSenha.length() < TAMANHO_MINIMO_SENHA) {
                 problemas.add("- APP_ADMIN_SENHA tem menos de " + TAMANHO_MINIMO_SENHA
                         + " caracteres.");
@@ -112,9 +105,6 @@ public class ValidadorSegurancaProducao {
         if (adminSenha.isEmpty()) {
             log.warn("[SEGURANÇA] APP_ADMIN_SENHA vazia: uma senha aleatória será gerada e "
                     + "impressa no log. Defina a variável para ter uma senha fixa.");
-        } else if (SENHA_PADRAO_DEV.equals(adminSenha)) {
-            log.warn("[SEGURANÇA] usando a SENHA PADRÃO de desenvolvimento. "
-                    + "Defina APP_ADMIN_SENHA antes de publicar em produção.");
         }
         if (botApiKey.isEmpty()) {
             log.warn("[SEGURANÇA] BOT_API_KEY vazia: o endpoint do robô está ABERTO. "

@@ -70,7 +70,7 @@ openssl rand -base64 24  # use como APP_ADMIN_SENHA e DB_PASSWORD
 
 Com `APP_AMBIENTE=producao`, a aplicação **se recusa a iniciar** se encontrar:
 
-- `APP_ADMIN_SENHA` vazia, igual ao padrão do repositório (`binho-admin`) ou com
+- `APP_ADMIN_SENHA` vazia, igual ao padrão antigo de desenvolvimento ou com
   menos de 12 caracteres;
 - `BOT_API_KEY` vazia ou com menos de 24 caracteres;
 - `APP_CORS_ORIGINS` apontando apenas para `localhost`/`127.0.0.1`.

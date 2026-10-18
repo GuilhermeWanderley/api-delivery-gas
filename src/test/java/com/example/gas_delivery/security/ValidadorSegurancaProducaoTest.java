@@ -22,11 +22,11 @@ class ValidadorSegurancaProducaoTest {
     }
 
     @Test
-    @DisplayName("Produção com a senha padrão do repositório é bloqueada")
+    @DisplayName("Produção com senha curta é bloqueada")
     void producaoComSenhaPadraoDeveFalhar() {
-        var v = validador("producao", "binho-admin", CHAVE_FORTE, DOMINIO_REAL);
+        var v = validador("producao", "curta123", CHAVE_FORTE, DOMINIO_REAL);
         IllegalStateException erro = assertThrows(IllegalStateException.class, v::validar);
-        assertTrue(erro.getMessage().contains("SENHA PADRÃO"));
+        assertTrue(erro.getMessage().contains("menos de"));
     }
 
     @Test
@@ -62,7 +62,7 @@ class ValidadorSegurancaProducaoTest {
     @Test
     @DisplayName("Em desenvolvimento nada é bloqueado (só avisos)")
     void desenvolvimentoNaoDeveBloquear() {
-        var v = validador("desenvolvimento", "binho-admin", "", "http://localhost:5173");
+        var v = validador("desenvolvimento", "qualquer-senha", "", "http://localhost:5173");
         assertDoesNotThrow(v::validar);
     }
 }

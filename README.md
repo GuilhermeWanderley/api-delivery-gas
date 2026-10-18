@@ -67,7 +67,7 @@ entrega), avisa o cliente pelo WhatsApp e gerencia o **caixa por turno**.
 - API: `http://localhost:8080`
 - Console do banco H2: `http://localhost:8080/h2-console`
   (JDBC URL `jdbc:h2:mem:gasdb`, usuário `sa`, sem senha)
-- Login do painel: `admin` / `binho-admin` (padrão de desenvolvimento)
+- Login do painel: definido em `APP_ADMIN_USUARIO` / `APP_ADMIN_SENHA` (veja `.env.example`). Se a senha não for definida, o sistema gera uma aleatória e imprime no log.
 
 ### Docker (Postgres de verdade — é assim que roda em produção)
 
