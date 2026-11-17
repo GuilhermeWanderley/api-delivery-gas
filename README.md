@@ -335,5 +335,25 @@ gas-delivery/
 └── src/
     ├── main/java/...      ← código
     ├── main/resources/    ← config + migrações
-    └── test/java/...      ← testes (81)
+    └── test/java/...      ← testes (116)
 ```
+
+---
+
+## Capturas
+
+> Dados do **Modo Simulação** — clientes, CPFs e telefones são fictícios.
+
+![Arquitetura](docs/arquitetura.png)
+
+| Kanban de pedidos | Alerta de atendimento |
+|---|---|
+| ![Kanban](docs/02-kanban.webp) | ![Atendimento](docs/06-atendimento.webp) |
+
+| Caixa por turno | Entregadores |
+|---|---|
+| ![Caixa](docs/05-caixa.webp) | ![Entregadores](docs/04-entregadores.webp) |
+
+| Histórico | Login |
+|---|---|
+| ![Histórico](docs/03-tabela.webp) | ![Login](docs/07-login.webp) |
