@@ -357,3 +357,10 @@ gas-delivery/
 | Histórico | Login |
 |---|---|
 | ![Histórico](docs/03-tabela.webp) | ![Login](docs/07-login.webp) |
+
+### O fluxo da conversa (Typebot)
+
+![Fluxo do Typebot](docs/08-typebot-fluxo.webp)
+
+Cada caixa é uma etapa: captura do telefone, boas-vindas, triagem (pedido ou
+atendente), nome, CPF do Gás do Povo, endereço, pagamento e o envio para a API.
